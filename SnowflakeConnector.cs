@@ -4,6 +4,7 @@ using OutSystems.SnowflakeConnector;
 using Newtonsoft.Json;
 using Snowflake.Data.Client;
 using System.Text;
+using Apache.Arrow;
 
 namespace OutSystems.SnowflakeConnector
 {
@@ -71,18 +72,27 @@ namespace OutSystems.SnowflakeConnector
         {
             string privKey = Encoding.UTF8.GetString(ssPrivateKey);
 
-            string connectionString = 
-                "SCHEMA=" + ssScheme + 
-                ";DB=" + ssDatabase + 
-                ";ACCOUNT=" + ssAccount + 
-                ";HOST=" + ssHost + 
-                ";WAREHOUSE=" + ssWarehouse + 
-                ";USER=" + ssUsername + 
-                ";AUTHENTICATOR=SNOWFLAKE_JWT" +
-                ";PRIVATE_KEY=" + privKey + ";";
+            string connectionString =
+                "HOST=" + ssHost +";" +
+                "ACCOUNT=" + ssAccount + ";" +
+                "USER=" + ssUsername + ";" +
+                "AUTHENTICATOR=SNOWFLAKE_JWT" + ";" +
+                "PRIVATE_KEY=" + privKey + ";" ;
 
             if(ssPrivateKeyPWD !=""){
-                connectionString = connectionString + "PRIVATE_KEY_PWD="+ssPrivateKeyPWD+ ";";;
+                connectionString = connectionString + "PRIVATE_KEY_PWD="+ssPrivateKeyPWD+ ";";
+            }
+            if(ssScheme != "")
+            {
+                connectionString = connectionString + "SCHEMA=" + ssScheme + ";";
+            }
+            if (ssDatabase != "")
+            {
+                connectionString = connectionString + "DB=" + ssDatabase + ";";
+            }
+            if (ssWarehouse != "")
+            {
+                connectionString = connectionString + "WAREHOUSE=" + ssWarehouse + ";";
             }
 
             if (ssPort != "")
