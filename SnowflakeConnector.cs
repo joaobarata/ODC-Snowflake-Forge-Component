@@ -3,6 +3,7 @@ using System.Data;
 using OutSystems.SnowflakeConnector;
 using Newtonsoft.Json;
 using Snowflake.Data.Client;
+using System.Text;
 
 namespace OutSystems.SnowflakeConnector
 {
@@ -65,5 +66,62 @@ namespace OutSystems.SnowflakeConnector
                 ssIsSuccessful = true;
             }
         } // MssRunQuery
+    
+        public void RunQuery_JWTAuth(string ssUsername, byte[] ssPrivateKey, string ssPrivateKeyPWD, string ssScheme, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
+        {
+            string privKey = Encoding.UTF8.GetString(ssPrivateKey);
+
+            string connectionString = 
+                "SCHEMA=" + ssScheme + 
+                ";DB=" + ssDatabase + 
+                ";ACCOUNT=" + ssAccount + 
+                ";HOST=" + ssHost + 
+                ";WAREHOUSE=" + ssWarehouse + 
+                ";USER=" + ssUsername + 
+                ";AUTHENTICATOR=SNOWFLAKE_JWT" +
+                ";PRIVATE_KEY=" + privKey + ";";
+
+            if(ssPrivateKeyPWD !=""){
+                connectionString = connectionString + "PRIVATE_KEY_PWD="+ssPrivateKeyPWD+ ";";;
+            }
+
+            if (ssPort != "")
+            {
+                connectionString = connectionString + "PORT=" + ssPort + ";";;
+            }
+
+            if (ssRole != "")
+            {
+                connectionString = connectionString + "ROLE=" + ssRole + ";";;
+            }
+
+            if (ssExtraParametersForConnectionString != "")
+            {
+                connectionString = connectionString + ssExtraParametersForConnectionString + ";";;
+            }
+
+            using (var conn = new SnowflakeDbConnection())
+            {
+                conn.ConnectionString = connectionString;
+                conn.Open();
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = ssQuery;
+                ssResultInJSON = "";
+
+                var reader = cmd.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    DataTable dataTable = new DataTable();
+                    dataTable.Load(reader);
+                    ssResultInJSON = JsonConvert.SerializeObject(dataTable);
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+                conn.Close();
+                ssIsSuccessful = true;
+            }
+        }
     }
 }
