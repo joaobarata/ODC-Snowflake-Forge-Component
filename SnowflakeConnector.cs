@@ -1,10 +1,7 @@
-﻿using OutSystems.ExternalLibraries.SDK;
-using System.Data;
-using OutSystems.SnowflakeConnector;
+﻿using System.Data;
 using Newtonsoft.Json;
 using Snowflake.Data.Client;
-using System.Text;
-using Apache.Arrow;
+using System.Data.Common;
 
 namespace OutSystems.SnowflakeConnector
 {
@@ -25,18 +22,94 @@ namespace OutSystems.SnowflakeConnector
         /// <param name="ssWarehouse"></param>
         /// <param name="ssExtraParametersForConnectionString"></param>
         /// <param name="ssResultInJSON"></param>
-        public void RunQuery(string ssUsername, string ssPassword, string ssScheme, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
+        public void RunQuery(string ssUsername, string ssPassword, string ssSchema, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
         {
-            string connectionString = "SCHEMA=" + ssScheme + ";DB=" + ssDatabase + ";ACCOUNT=" + ssAccount + ";HOST=" + ssHost + ";WAREHOUSE=" + ssWarehouse + ";USER=" + ssUsername + ";PASSWORD=" + ssPassword + ";" + ssExtraParametersForConnectionString;
 
-            if (ssPort != "")
+            try
             {
-                connectionString = connectionString + ";PORT=" + ssPort;
+                using (var conn = new SnowflakeDbConnection())
+                {
+                    string connectionString =
+                        "ACCOUNT=" + ssAccount + ";" +
+                        "USER=" + ssUsername + ";" +
+                        "PASSWORD=" + ssPassword + ";" ;
+
+                    connectionString = AppendOptionalParametersToTheConnectionString(ssDatabase, ssHost, ssRole, ssSchema, ssWarehouse, ssPort, connectionString, ssExtraParametersForConnectionString);
+
+                    RunQuery(ssQuery, out ssIsSuccessful, out ssResultInJSON, conn, connectionString);
+                }
+            }
+
+            catch (DbException exc)
+            {
+                ssIsSuccessful = false;
+                ssResultInJSON = CreateErrorMessage(exc);
+            }
+
+
+        } // MssRunQuery
+    
+        public void RunQuery_JWTAuth(string ssUsername, string ssPrivateKeyContent, string ssPrivateKeyPWD, string ssSchema, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
+        {
+            try
+            {
+                using (var conn = new SnowflakeDbConnection())
+                {
+                    //from Snowflake's documentation: connectionstring="account=testaccount;authenticator=snowflake_jwt;user=testuser;private_key={0};db=testdb;schema=testschema";
+                    string connectionString = 
+                        "ACCOUNT=" + ssAccount + ";" +
+                        "USER=" + ssUsername + ";" +
+                        "AUTHENTICATOR=SNOWFLAKE_JWT" + ";" +
+                        "PRIVATE_KEY=" + ssPrivateKeyContent + ";";
+
+                    if (ssPrivateKeyPWD != "")
+                    {
+                        connectionString = connectionString + "PRIVATE_KEY_PWD=" + ssPrivateKeyPWD + ";";
+                    }
+
+                    connectionString = AppendOptionalParametersToTheConnectionString(ssDatabase, ssHost, ssRole, ssSchema, ssWarehouse, connectionString, ssPort, ssExtraParametersForConnectionString);
+
+                    RunQuery(ssQuery, out ssIsSuccessful, out ssResultInJSON, conn, connectionString);
+                }
+            }
+
+            catch (DbException exc)
+            {
+                ssIsSuccessful = false;
+                ssResultInJSON = CreateErrorMessage(exc);
+            }
+
+        }
+
+        private static string AppendOptionalParametersToTheConnectionString(string ssDatabase, string ssHost, string ssRole, string ssSchema, string ssWarehouse, string ssPort, string connectionString, string ssExtraParametersForConnectionString)
+        {
+            if (ssDatabase != "")
+            {
+                connectionString = connectionString + "DB=" + ssDatabase + ";";
+            }
+
+            if (ssHost != "")
+            {
+                connectionString = connectionString + "HOST=" + ssHost + ";";
             }
 
             if (ssRole != "")
             {
-                connectionString = connectionString + ";ROLE=" + ssRole;
+                connectionString = connectionString + "ROLE=" + ssRole + ";";
+            }
+
+            if (ssSchema != "")
+            {
+                connectionString = connectionString + "SCHEMA=" + ssSchema + ";";
+            }
+
+            if (ssWarehouse != "")
+            {
+                connectionString = connectionString + "WAREHOUSE=" + ssWarehouse + ";";
+            }
+            if (ssPort != "")
+            {
+                connectionString = connectionString + "PORT=" + ssPort + ";"; ;
             }
 
             if (ssExtraParametersForConnectionString != "")
@@ -44,94 +117,36 @@ namespace OutSystems.SnowflakeConnector
                 connectionString = connectionString + ssExtraParametersForConnectionString;
             }
 
-            using (var conn = new SnowflakeDbConnection())
-            {
-                conn.ConnectionString = connectionString;
-                conn.Open();
-                var cmd = conn.CreateCommand();
-                cmd.CommandText = ssQuery;
-                ssResultInJSON = "";
-
-                var reader = cmd.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    DataTable dataTable = new DataTable();
-                    dataTable.Load(reader);
-                    ssResultInJSON = JsonConvert.SerializeObject(dataTable);
-                }
-                else
-                {
-                    Console.WriteLine("No rows found.");
-                }
-                conn.Close();
-                ssIsSuccessful = true;
-            }
-        } // MssRunQuery
-    
-        public void RunQuery_JWTAuth(string ssUsername, byte[] ssPrivateKey, string ssPrivateKeyPWD, string ssScheme, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
-        {
-            string privKey = Encoding.UTF8.GetString(ssPrivateKey);
-
-            string connectionString =
-                "HOST=" + ssHost +";" +
-                "ACCOUNT=" + ssAccount + ";" +
-                "USER=" + ssUsername + ";" +
-                "AUTHENTICATOR=SNOWFLAKE_JWT" + ";" +
-                "PRIVATE_KEY=" + privKey + ";" ;
-
-            if(ssPrivateKeyPWD !=""){
-                connectionString = connectionString + "PRIVATE_KEY_PWD="+ssPrivateKeyPWD+ ";";
-            }
-            if(ssScheme != "")
-            {
-                connectionString = connectionString + "SCHEMA=" + ssScheme + ";";
-            }
-            if (ssDatabase != "")
-            {
-                connectionString = connectionString + "DB=" + ssDatabase + ";";
-            }
-            if (ssWarehouse != "")
-            {
-                connectionString = connectionString + "WAREHOUSE=" + ssWarehouse + ";";
-            }
-
-            if (ssPort != "")
-            {
-                connectionString = connectionString + "PORT=" + ssPort + ";";;
-            }
-
-            if (ssRole != "")
-            {
-                connectionString = connectionString + "ROLE=" + ssRole + ";";;
-            }
-
-            if (ssExtraParametersForConnectionString != "")
-            {
-                connectionString = connectionString + ssExtraParametersForConnectionString + ";";;
-            }
-
-            using (var conn = new SnowflakeDbConnection())
-            {
-                conn.ConnectionString = connectionString;
-                conn.Open();
-                var cmd = conn.CreateCommand();
-                cmd.CommandText = ssQuery;
-                ssResultInJSON = "";
-
-                var reader = cmd.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    DataTable dataTable = new DataTable();
-                    dataTable.Load(reader);
-                    ssResultInJSON = JsonConvert.SerializeObject(dataTable);
-                }
-                else
-                {
-                    Console.WriteLine("No rows found.");
-                }
-                conn.Close();
-                ssIsSuccessful = true;
-            }
+            return connectionString;
         }
+
+        private static string CreateErrorMessage(DbException exc)
+        {
+            return "There was an error. \n Message: " + exc.Message + "\n Stacktrace: " + exc.StackTrace + "\n Error Code: " + exc.ErrorCode + "\n Source: " + exc.Source + "\n Data: " + exc.Data + "\n InnerException:" + exc.InnerException;
+        }
+
+        private static void RunQuery(string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, SnowflakeDbConnection conn, string connectionString)
+        {
+            conn.ConnectionString = connectionString;
+            conn.Open();
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = ssQuery;
+            ssResultInJSON = "";
+
+            var reader = cmd.ExecuteReader();
+            if (reader.HasRows)
+            {
+                DataTable dataTable = new DataTable();
+                dataTable.Load(reader);
+                ssResultInJSON = JsonConvert.SerializeObject(dataTable);
+            }
+            else
+            {
+                ssResultInJSON = "No rows found.";
+            }
+            conn.Close();
+            ssIsSuccessful = true;
+        }
+
     }
 }

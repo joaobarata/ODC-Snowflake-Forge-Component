@@ -10,7 +10,7 @@ namespace OutSystems.SnowflakeConnector
 		/// </summary>
 		/// <param name="username"></param>
 		/// <param name="password"></param>
-		/// <param name="scheme"></param>
+		/// <param name="schema"></param>
 		/// <param name="account"></param>
 		/// <param name="host"></param>
 		/// <param name="port"></param>
@@ -21,7 +21,7 @@ namespace OutSystems.SnowflakeConnector
 		/// <param name="isSuccessful"></param>
 		/// <param name="resultInJSON"></param>
 		/// <param name="database"></param>
-        void RunQuery(string username, string password, string scheme, string account, string host, string port, string role, string warehouse, string extraParametersForConnectionString, string query, out bool isSuccessful, out string resultInJSON, string database);
+        void RunQuery(string username, string password, string schema, string account, string host, string port, string role, string warehouse, string extraParametersForConnectionString, string query, out bool isSuccessful, out string resultInJSON, string database);
 
 		/// <summary>
 		/// 
@@ -29,7 +29,7 @@ namespace OutSystems.SnowflakeConnector
 		/// <param name="username"></param>
 		/// <param name="privateKey"></param>
 		/// <param name="privateKey"></param>
-		/// <param name="scheme"></param>
+		/// <param name="schema"></param>
 		/// <param name="account"></param>
 		/// <param name="host"></param>
 		/// <param name="port"></param>
@@ -40,6 +40,6 @@ namespace OutSystems.SnowflakeConnector
 		/// <param name="isSuccessful"></param>
 		/// <param name="resultInJSON"></param>
 		/// <param name="database"></param>
-        void RunQuery_JWTAuth(string username, byte[] privateKey, string privateKeyPWD, string scheme, string account, string host, string port, string role, string warehouse, string extraParametersForConnectionString, string query, out bool isSuccessful, out string resultInJSON, string database);
+        void RunQuery_JWTAuth(string username, string privateKey, string privateKeyPWD, string schema, string account, string host, string port, string role, string warehouse, string extraParametersForConnectionString, string query, out bool isSuccessful, out string resultInJSON, string database);
     }
 }
