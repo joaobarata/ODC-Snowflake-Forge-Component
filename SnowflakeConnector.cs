@@ -24,18 +24,22 @@ namespace OutSystems.SnowflakeConnector
         /// <param name="ssResultInJSON"></param>
         public void RunQuery(string ssUsername, string ssPassword, string ssSchema, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
         {
-
+            
             try
             {
+                if (ssHost.ToLower() == "secure-gateway")
+                {
+                    ssHost = Environment.GetEnvironmentVariable("SECURE_GATEWAY") ?? ssHost;
+                }
+
                 using (var conn = new SnowflakeDbConnection())
                 {
                     string connectionString =
                         "ACCOUNT=" + ssAccount + ";" +
                         "USER=" + ssUsername + ";" +
-                        "PASSWORD=" + ssPassword + ";" ;
+                        "PASSWORD=" + ssPassword + ";";
 
-                    connectionString = AppendOptionalParametersToTheConnectionString(ssDatabase, ssHost, ssRole, ssSchema, ssWarehouse, ssPort, connectionString, ssExtraParametersForConnectionString);
-
+                    connectionString = AppendOptionalParametersToTheConnectionString(connectionString, ssDatabase, ssHost, ssRole, ssSchema, ssWarehouse, ssPort, ssExtraParametersForConnectionString);
                     RunQuery(ssQuery, out ssIsSuccessful, out ssResultInJSON, conn, connectionString);
                 }
             }
@@ -51,12 +55,19 @@ namespace OutSystems.SnowflakeConnector
     
         public void RunQuery_JWTAuth(string ssUsername, string ssPrivateKeyContent, string ssPrivateKeyPWD, string ssSchema, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
         {
+           
+
             try
             {
                 using (var conn = new SnowflakeDbConnection())
                 {
                     //from Snowflake's documentation: connectionstring="account=testaccount;authenticator=snowflake_jwt;user=testuser;private_key={0};db=testdb;schema=testschema";
-                    string connectionString = 
+
+                    if(ssHost.ToLower() == "secure-gateway")
+                    {
+                        ssHost = Environment.GetEnvironmentVariable("SECURE_GATEWAY") ?? ssHost;
+                    }
+                    string connectionString =
                         "ACCOUNT=" + ssAccount + ";" +
                         "USER=" + ssUsername + ";" +
                         "AUTHENTICATOR=SNOWFLAKE_JWT" + ";" +
@@ -67,8 +78,7 @@ namespace OutSystems.SnowflakeConnector
                         connectionString = connectionString + "PRIVATE_KEY_PWD=" + ssPrivateKeyPWD + ";";
                     }
 
-                    connectionString = AppendOptionalParametersToTheConnectionString(ssDatabase, ssHost, ssRole, ssSchema, ssWarehouse, connectionString, ssPort, ssExtraParametersForConnectionString);
-
+                    connectionString = AppendOptionalParametersToTheConnectionString(connectionString, ssDatabase, ssHost, ssRole, ssSchema, ssWarehouse, ssPort, ssExtraParametersForConnectionString);
                     RunQuery(ssQuery, out ssIsSuccessful, out ssResultInJSON, conn, connectionString);
                 }
             }
@@ -81,7 +91,7 @@ namespace OutSystems.SnowflakeConnector
 
         }
 
-        private static string AppendOptionalParametersToTheConnectionString(string ssDatabase, string ssHost, string ssRole, string ssSchema, string ssWarehouse, string ssPort, string connectionString, string ssExtraParametersForConnectionString)
+        private static string AppendOptionalParametersToTheConnectionString(string connectionString, string ssDatabase, string ssHost, string ssRole, string ssSchema, string ssWarehouse, string ssPort, string ssExtraParametersForConnectionString)
         {
             if (ssDatabase != "")
             {
@@ -122,7 +132,7 @@ namespace OutSystems.SnowflakeConnector
 
         private static string CreateErrorMessage(DbException exc)
         {
-            return "There was an error. \n Message: " + exc.Message + "\n Stacktrace: " + exc.StackTrace + "\n Error Code: " + exc.ErrorCode + "\n Source: " + exc.Source + "\n Data: " + exc.Data + "\n InnerException:" + exc.InnerException;
+            return "There was an error. " + "\n Message: " + exc.Message + "\n Stacktrace: " + exc.StackTrace + "\n Error Code: " + exc.ErrorCode + "\n Source: " + exc.Source + "\n Data: " + exc.Data + "\n InnerException:" + exc.InnerException;
         }
 
         private static void RunQuery(string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, SnowflakeDbConnection conn, string connectionString)
