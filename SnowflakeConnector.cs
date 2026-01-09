@@ -1,7 +1,9 @@
 ﻿using System.Data;
 using Newtonsoft.Json;
 using Snowflake.Data.Client;
+using Snowflake.Data;
 using System.Data.Common;
+using Snowflake.Data.Configuration;
 
 namespace OutSystems.SnowflakeConnector
 {
@@ -53,20 +55,14 @@ namespace OutSystems.SnowflakeConnector
 
         } // MssRunQuery
     
-        public void RunQuery_JWTAuth(string ssUsername, string ssPrivateKeyContent, string ssPrivateKeyPWD, string ssSchema, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase)
+        public void RunQuery_JWTAuth(string ssUsername, string ssPrivateKeyContent, string ssPrivateKeyPWD, string ssSchema, string ssAccount, string ssHost, string ssPort, string ssRole, string ssWarehouse, string ssExtraParametersForConnectionString, string ssQuery, out bool ssIsSuccessful, out string ssResultInJSON, string ssDatabase, bool ssUsePrivateGateway)
         {
-           
-
             try
             {
                 using (var conn = new SnowflakeDbConnection())
                 {
                     //from Snowflake's documentation: connectionstring="account=testaccount;authenticator=snowflake_jwt;user=testuser;private_key={0};db=testdb;schema=testschema";
 
-                    if(ssHost.ToLower() == "secure-gateway")
-                    {
-                        ssHost = Environment.GetEnvironmentVariable("SECURE_GATEWAY") ?? ssHost;
-                    }
                     string connectionString =
                         "ACCOUNT=" + ssAccount + ";" +
                         "USER=" + ssUsername + ";" +
@@ -77,8 +73,18 @@ namespace OutSystems.SnowflakeConnector
                     {
                         connectionString = connectionString + "PRIVATE_KEY_PWD=" + ssPrivateKeyPWD + ";";
                     }
-
+                    
+                    if (ssUsePrivateGateway)
+                    {
+                        if (Environment.GetEnvironmentVariable("SECURE_GATEWAY") != null) {
+                            Environment.SetEnvironmentVariable("SnowflakeHost", ssHost);
+                            ssHost = Environment.GetEnvironmentVariable("SECURE_GATEWAY") ?? ssHost; 
+                        
+                        }
+                    }
                     connectionString = AppendOptionalParametersToTheConnectionString(connectionString, ssDatabase, ssHost, ssRole, ssSchema, ssWarehouse, ssPort, ssExtraParametersForConnectionString);
+
+
                     RunQuery(ssQuery, out ssIsSuccessful, out ssResultInJSON, conn, connectionString);
                 }
             }
@@ -157,6 +163,5 @@ namespace OutSystems.SnowflakeConnector
             conn.Close();
             ssIsSuccessful = true;
         }
-
     }
 }
