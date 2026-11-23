@@ -1,9 +1,7 @@
 ﻿using System.Data;
 using Newtonsoft.Json;
 using Snowflake.Data.Client;
-using Snowflake.Data;
 using System.Data.Common;
-using Snowflake.Data.Configuration;
 
 namespace OutSystems.SnowflakeConnector
 {
