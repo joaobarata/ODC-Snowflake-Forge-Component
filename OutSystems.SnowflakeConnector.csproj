@@ -12,15 +12,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
+    <PackageReference Include="Google.Api.Gax" Version="4.16.0" />
+    <PackageReference Include="Google.Api.Gax.Rest" Version="4.16.0" />
+    <PackageReference Include="Google.Apis.Storage.v1" Version="1.78.0.4332" />
+    <PackageReference Include="Google.Cloud.Storage.V1" Version="5.0.0" />
+    <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
     <PackageReference Include="OutSystems.ExternalLibraries.SDK" Version="1.7.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageReference Include="Apache.Arrow" Version="23.0.0" />
     <PackageReference Include="AWSSDK.Core" Version="4.0.100.9" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.101.7" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.29.1" />
-    <PackageReference Include="Google.Apis.Auth" Version="1.75.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.78.0" />
     <PackageReference Include="log4net" Version="3.3.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Tomlyn.Signed" Version="2.11.1" />
      <Reference Include="Snowflake">
       <HintPath>../../snowflake-connector-net/Snowflake.Data/bin/Release/net10.0/Snowflake.Data.dll</HintPath>
     </Reference>
